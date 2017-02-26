@@ -1,0 +1,11 @@
+{
+  "name": "projektvpn-client",
+  "version": "0.0.1",
+  "dependencies": {
+    "cjdns-admin": "^0.2.0"
+  },
+  "main": "index.html",
+  "devDependencies": {
+    "nw-builder": "^3.2.0"
+  }
+}
