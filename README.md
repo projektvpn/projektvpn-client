@@ -1,19 +1,26 @@
 # ProjektVPN Client
 
-This app will connect your computer to a ProjeckTVN VPN server.
+This app will connect your computer to a ProjecktVPN VPN server.
 
-## Run as a Developer
+## Developing
 
-```
-npm install
-node_modules/nw-builder/bin/nwbuild -r .
-```
+The project layout consists of an outer `projektvpn-client-builder` module and an inner `projektvpn-client` moduyle which is the actual distributed NW.js app. This is necessary so that `nw-builder` doesn't try to ship itself as one of the app's dependencies.
 
-## Build for Distribution
+### Run as a Developer
 
 ```
 npm install
-node_modules/nw-builder/bin/nwbuild -p osx64,win64,linux64 .
+cd app && npm install; cd ..
+npm start
 ```
 
-Binaries will land in `./build`
+### Build for Distribution
+
+```
+npm install
+cd app && npm install; cd ..
+npm run package
+```
+
+Folder structures to be installed will land in `./build`.
+

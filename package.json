@@ -1,11 +1,11 @@
 {
-  "name": "projektvpn-client",
+  "name": "projektvpn-client-builder",
   "version": "0.0.1",
-  "dependencies": {
-    "cjdns-admin": "^0.2.0"
+  "scripts": {
+    "start": "./node_modules/nw-builder/bin/nwbuild -v 0.20.3 -r app",
+    "package": "node build.js"
   },
-  "main": "index.html",
-  "devDependencies": {
+  "dependencies": {
     "nw-builder": "^3.2.0"
   }
 }
