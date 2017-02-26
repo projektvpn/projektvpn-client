@@ -2,7 +2,8 @@
   "name": "projektvpn-client",
   "version": "0.0.1",
   "dependencies": {
+    "auto-launch": "^5.0.1",
     "cjdns-admin": "^0.2.0"
   },
-  "main": "index.html"
+  "main": "index.js"
 }
