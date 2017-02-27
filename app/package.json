@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "dependencies": {
     "auto-launch": "^5.0.1",
-    "cjdns-admin": "^0.2.0"
+    "cjdns-admin": "^0.2.0",
+    "user-settings": "^0.1.5"
   },
   "main": "index.js"
 }
