@@ -9,17 +9,14 @@
       const fs = require('fs')
       // We also use async
       const async = require('async')
+      // We need to be able to prompt for sudo/elvation
+      const sudoPrompt = require('sudo-prompt')
       // Set up a settings manager
       const settings = require('user-settings').file('.projektvpn-client')
 
-      // We have a function to grab the config path. Calls the callback with
+      // We have a function to guess the config path. Calls the callback with
       // null and the appropriate path (or null), or an error
-      function getConfigPath(callback) {
-        
-        if (settings.get('cjdns-config-path')) {
-          // If we know it already, use that
-          return callback(null, settings.get('cjdns-config-path'))
-        }
+      function guessConfigPath(callback) {
         
         // We know where fils ought to be by default
         var possible_paths = ['/etc/cjdroute.conf', 'C:\\Program Files (x86)\\cjdns\\cjdroute.conf']
@@ -54,6 +51,39 @@
         })
         
       }
+      
+      // Call the callback with an error, or null and the contents of the given
+      // file. If the file is not accessible by the current user, it will be
+      // read via an elevated command.
+      function catProtectedFile(filename, callback) {
+        fs.access(filename, fs.constants.R_OK, (err) => {
+          if (err) {
+            // File is not accessible to this user
+            
+            // What command should we use? Windows is different than everyone else.
+            var cat_command = /^win/.test(process.platform) ? 'type' : 'cat'
+            
+            sudoPrompt.exec(cat_command + ' "' + filename + '"', {}, function(err, stdout, stderr) {
+              // OK we launched the sudo command
+              if (err) {
+                return callback(err)
+              }
+              
+              if (stderr != "") {
+                return callback(new Error('Config read command complained: ' + stderr))
+              }
+              
+              // Send back the contents of standard out
+              callback(null, stdout)
+            }) 
+            
+            
+          } else {
+            // We can read the file ourselves. So do it.
+            fs.readFile(filename, 'utf8', callback)
+          }
+        })
+      }
 
 
       // This holds our cjdns admin object, once we acquire the password
@@ -75,27 +105,43 @@
           data: {
             pid: 0,
             cjdns_password: settings.get('cjdns_password'),
-            cjdns_config_path: null
+            cjdns_config_path: settings.get('cjdns_config_path')
           }
         })
         
         console.log('Ractive: ', ractive)
         
-        // Go looking for the cjdns config file
-        getConfigPath((err, path) => {
-          if (err) {
-            throw err
-          }
-          
-          if (path != null) {
-            // Set the path
-            ractive.set('cjdns_config_path', path)
-          }
-        })
+        // If the password or config file change, commit them back to settings
+        function commit_setting(new_value, old_value, keypath) {
+          settings.set(keypath, new_value)
+        }
+        ractive.observe('cjdns_password', commit_setting, {init: false})      
+        ractive.observe('cjdns_config_path', commit_setting, {init: false})        
+        
+        if (!ractive.get('cjdns_config_path')) {
+          // No config path is known, so default it
+          guessConfigPath((err, path) => {
+            if (err) {
+              throw err
+            }
+            
+            if (path != null) {
+              // Set the path
+              ractive.set('cjdns_config_path', path)
+            }
+          })
+        }
         
         // Event handlers
         ractive.on('get-password', (event) => {
           console.log('Go get the password')
+          catProtectedFile(ractive.get('cjdns_config_path'), (err, data) => {
+            if (err) {
+              throw err
+            }
+            
+            console.log('Got cjdns config: ', data)
+          })
         })
         
         console.log('Setup complete!')
