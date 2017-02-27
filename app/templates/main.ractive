@@ -1,1 +1,9 @@
-<p>Hello, {{name}}!</p>
+<h1>ProjektVPN</h1>
+<p>CJDNS PID: {{pid}}</p>
+<p>CJDNS Config: {{cjdns_config_path}}</p>
+{{#if cjdns-password}}
+  <p>CJDNS Credentials Stored</p>
+{{else}}
+  <b>No CJDNS password available!</b>
+  <a on-click="get-password" href="#">Connect to CJDNS</a>
+{{/if}}

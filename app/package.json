@@ -2,9 +2,11 @@
   "name": "projektvpn-client",
   "version": "0.0.1",
   "dependencies": {
+    "async": "^2.1.5",
     "auto-launch": "^5.0.1",
     "cjdns-admin": "^0.2.0",
     "user-settings": "^0.1.5"
   },
-  "main": "index.js"
+  "main": "index.js",
+  "chromium-args": "--mixed-context"
 }

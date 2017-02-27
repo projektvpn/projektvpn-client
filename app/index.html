@@ -4,14 +4,64 @@
     <title>ProjektVPN Client</title>
     <script type="text/javascript" src="js/ractive.min.js"></script>
     <script type="text/javascript">
-    
       const cjdnsAdmin = require('cjdns-admin')
       // We need FS access for reading the ractive templates
       const fs = require('fs')
-      
+      // We also use async
+      const async = require('async')
+      // Set up a settings manager
+      const settings = require('user-settings').file('.projektvpn-client')
+
+      // We have a function to grab the config path. Calls the callback with
+      // null and the appropriate path (or null), or an error
+      function getConfigPath(callback) {
+        
+        if (settings.get('cjdns-config-path')) {
+          // If we know it already, use that
+          return callback(null, settings.get('cjdns-config-path'))
+        }
+        
+        // We know where fils ought to be by default
+        var possible_paths = ['/etc/cjdroute.conf', 'C:\\Program Files (x86)\\cjdns\\cjdroute.conf']
+        
+        async.map(possible_paths, (item, callback) => {
+          // See if each file exists
+          fs.access(item, fs.constants.F_OK, (err) => {
+            if (err) {
+              // File does not exist (or is hiding from us)
+              callback(null, false)
+            } else {
+              // File exists
+              callback(null, true)
+            }
+          })
+        }, (err, results) => {
+          if (err) {
+            // Something went wrong during iteration
+            return callback(err)
+          }
+          
+          for (var i = 0; i < results.length; i++) {
+            // Consider the existence flag for each filename
+            if (results[i] == true) {
+              // We found one that exists. Tell the caller
+              return callback(null, possible_paths[i])
+            }
+          }
+          
+          // If we make it here, no file exists
+          callback(null, null)
+        })
+        
+      }
+
+
+      // This holds our cjdns admin object, once we acquire the password
+      var admin = null
+
       // This will hold our main ractive
       var ractive = null
-      
+
       // Grab the template
       fs.readFile('templates/main.ractive', 'utf8', function(err, data) {
         if (err) {
@@ -22,10 +72,35 @@
         ractive = new Ractive({
           el: '#container',
           template: data,
-          data: { name: 'world' }
+          data: {
+            pid: 0,
+            cjdns_password: settings.get('cjdns_password'),
+            cjdns_config_path: null
+          }
         })
+        
+        console.log('Ractive: ', ractive)
+        
+        // Go looking for the cjdns config file
+        getConfigPath((err, path) => {
+          if (err) {
+            throw err
+          }
+          
+          if (path != null) {
+            // Set the path
+            ractive.set('cjdns_config_path', path)
+          }
+        })
+        
+        // Event handlers
+        ractive.on('get-password', (event) => {
+          console.log('Go get the password')
+        })
+        
+        console.log('Setup complete!')
+        
       })
-      
     </script>
   </head>
   <body>

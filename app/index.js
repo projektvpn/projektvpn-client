@@ -12,7 +12,8 @@ var tray = null;
 
 // Open up a window that's not visible.
 // The window code can do all our actual VPN client work.
-nw.Window.open('index.html', {show: false}, function(new_win) {
+// TODO: set show false to start up in the background
+nw.Window.open('index.html', {show: true}, function(new_win) {
   // Remember the window
   win = new_win
   win.on('close', function() {
