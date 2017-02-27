@@ -15,6 +15,33 @@
       const JSON5 = require('json5')
       // Set up a settings manager
       const settings = require('user-settings').file('.projektvpn-client')
+      
+      // We will populate this with the cjdnsAdmin instance
+      var admin = null
+      
+      // We use this global ractive
+      var ractive = null
+      
+      // Ping cjdns and update the UI with its response
+      // Do it every second or so. Assumes the ractive exists.
+      function pingCjdns() {
+        if (!admin) {
+          ractive.set('cjdns_reachable', false)
+          setTimeout(pingCjdns, 1000)
+        } else {
+          // If we don't get a pong in 1 second, cjdns isn't working
+          var cjdns_timeout = setTimeout(() => {
+            ractive.set('cjdns_reachable', false)
+            setTimeout(pingCjdns, 1000)
+          }, 1000)
+    
+          admin.once(admin.ping(), (res) => {
+            clearTimeout(cjdns_timeout)
+            ractive.set('cjdns_reachable', true)
+            setTimeout(pingCjdns, 1000)
+          })
+        }
+      }
 
       // We have a function to guess the config path. Calls the callback with
       // null and the appropriate path (or null), or an error
@@ -87,13 +114,6 @@
         })
       }
 
-
-      // This holds our cjdns admin object, once we acquire the password
-      var admin = null
-
-      // This will hold our main ractive
-      var ractive = null
-
       // Grab the template
       fs.readFile('templates/main.ractive', 'utf8', function(err, data) {
         if (err) {
@@ -108,7 +128,10 @@
             pid: 0,
             cjdns_password: settings.get('cjdns_password'),
             cjdns_config_path: settings.get('cjdns_config_path'),
-            cjdns_pubkey: settings.get('cjdns_pubkey')
+            cjdns_pubkey: settings.get('cjdns_pubkey'),
+            should_be_connected: settings.get('should_be_connected') || false,
+            // Is cjdns reachable?
+            cjdns_ok: false
           }
         })
         
@@ -116,11 +139,28 @@
         
         // If the cjdns info changes, commit back to settings
         function commit_setting(new_value, old_value, keypath) {
+          console.log('Save ', new_value, ' as ', keypath)
           settings.set(keypath, new_value)
         }
         ractive.observe('cjdns_password', commit_setting, {init: false})      
         ractive.observe('cjdns_config_path', commit_setting, {init: false})
-        ractive.observe('cjdns_pubkey', commit_setting, {init: false})        
+        ractive.observe('cjdns_pubkey', commit_setting, {init: false})
+        ractive.observe('should_be_connected', commit_setting, {init: false})
+        
+        // When we have the passord (or on startup), we can set up the cjdns admin object
+        ractive.observe('cjdns_password', (new_value) => {
+          if (new_value) {
+            // Make the admin connection
+            admin = cjdnsAdmin.createAdmin({
+                ip: 'localhost',
+                port: 11234,
+                password: new_value
+            })
+            
+            // Anything that wants cjdns will now see that the admin interface
+            // is set.
+          }
+        })
         
         if (!ractive.get('cjdns_config_path')) {
           // No config path is known, so default it
@@ -137,7 +177,7 @@
         }
         
         // Event handlers
-        ractive.on('get-password', (event) => {
+        ractive.on('parse-config', (event) => {
           console.log('Go get the password')
           catProtectedFile(ractive.get('cjdns_config_path'), (err, data) => {
             if (err) {
@@ -162,6 +202,9 @@
         })
         
         console.log('Setup complete!')
+        
+        // Start the cjdns pinging process
+        pingCjdns()
         
       })
     </script>

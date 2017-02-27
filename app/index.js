@@ -6,6 +6,9 @@
 
 console.log('Background page started.')
 
+// Set a secure umask for any files we create (like the cjdns password file)
+process.umask(0o077)
+
 // We'll set this with our one window if/when it's wanted
 var win = null;
 var tray = null;
