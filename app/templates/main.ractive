@@ -1,4 +1,7 @@
 <h1>ProjektVPN</h1>
+<p>ProjektVPN Server Pubkey: <input value="{{remote_pubkey}}"></p>
+<p>Tunnel index: {{iptunnel_index}}</p>
+<p>Connection wanted: <input type='checkbox' checked='{{should_be_connected}}'></p>
 {{#if cjdns_reachable}}
 <p>CJDNS OK</p>
 {{else}}
@@ -13,5 +16,5 @@
   <a on-click="parse-config" href="#">Autodetect</a>
 {{/if}}
 <p>CJDNS Pubkey: <input value="{{cjdns_pubkey}}"></p>
-<p>CJDNS Password: <input value="{{cjdns_password}}"></p>
+<p>CJDNS Admin Password: <input value="{{cjdns_password}}"></p>
 

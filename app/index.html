@@ -4,7 +4,10 @@
     <title>ProjektVPN Client</title>
     <script type="text/javascript" src="js/ractive.min.js"></script>
     <script type="text/javascript">
+      // We need this for talking to cjdns
       const cjdnsAdmin = require('cjdns-admin')
+      // We need this for parsing pubkeys
+      const publicToIp6 = require('./js/publicToIp6')
       // We need FS access for reading the ractive templates
       const fs = require('fs')
       // We also use async
@@ -21,6 +24,16 @@
       
       // We use this global ractive
       var ractive = null
+      
+      // Return the truthy ip6 if the given pubkey is valid, and false otherwise
+      function parsePubkey(pubkey) {
+        try {
+          var ip6 = publicToIp6.convert(pubkey)
+          return ip6
+        } catch (err) {
+          return false
+        }
+      }
       
       // Ping cjdns and update the UI with its response
       // Do it every second or so. Assumes the ractive exists.
@@ -41,6 +54,134 @@
             setTimeout(pingCjdns, 1000)
           })
         }
+      }
+      
+      // Look and see if we have a tunnel open, and if so update the ractive to
+      // remember its number. Calls the callback when the search is done, possibly with an error
+      function findTunnel(callback) {
+        if (!admin) {
+          return callback(new Error('Admin not started'))
+        }
+        admin.once(admin.ipTunnel.listConnections(), (response) => {
+          
+          if(response.data.error != 'none') {
+            // cjdns didn't say it worked
+            callback(new Error('Bad response when listing IP tunnels: ' + JSON.stringify(response)))
+          }
+          
+          if (ractive.get('iptunnel_index') != null) {
+            // We think we have a tunnel. Is it still there?
+            if (response.data.connections.indexOf(ractive.get('iptunnel_index')) == -1) {
+              // The tunnel we were using has disappeared
+              // Set it null now, but it may have come back and get found later.
+              console.log('Tunnel went missing')
+              ractive.set('iptunnel_index', null)
+            }
+          }
+          
+          async.each(response.data.connections, (connection_number, callback) => {
+            admin.once(admin.ipTunnel.showConnection({
+              connection: connection_number
+            }), (response) => {
+              if(response.data.error != 'none') {
+                // cjdns didn't say it worked
+                return callback(new Error('Bad response when inspecting IP tunnel ' +
+                  connection_number + ': ' + JSON.stringify(response)))
+              }
+              
+              if (parseInt(response.data.outgoing) > 0) {
+                // Outgoing connections get matched against the remote pubkey
+                if (response.data.key == ractive.get('remote_pubkey')) {
+                  // This connection is with our remote node. So we found the right one!
+                  console.log('Found tunnel ', connection_number)
+                  ractive.set('iptunnel_index', connection_number)
+                }
+              }
+              // No error happened
+              callback(null)
+            })
+          }, (err) => {
+            if (err) {
+              // Something broke for a tunnel
+              return callback(err)
+            }
+            
+            // We checked all existing tunnels
+            callback(null)
+          })
+        })
+      }
+      
+      // Tear down our tunnel, if it exists
+      function destroyTunnel() {
+        if (!admin) {
+          return
+        }
+        console.log('Destroy tunnel')
+        if (ractive.get('iptunnel_index') != null) {
+          // If we have a known tunnel, destroy it
+          admin.ipTunnel.removeConnection({
+            connection: ractive.get('iptunnel_index')
+          })
+          ractive.set('iptunnel_index', null)
+        }
+      }
+      
+      // Try to open a new iptunnel to the remote host
+      function createTunnel() {
+        if (!admin) {
+          return
+        }
+        console.log('Create tunnel')
+        admin.once(admin.ipTunnel.connectTo({
+          publicKeyOfNodeToConnectTo: ractive.get('remote_pubkey')
+        }), (res) => {
+          if (res.data.connection != undefined) {
+            // If we got a connection back, adopt it
+            ractive.set('iptunnel_index', res.data.connecion)
+          }
+        })
+      }
+      
+      // Cheap lock to make sure we only have one chain of tunnelDaemon callbacks going.
+      var tunnelDaemonTimeout = null;
+      // Create the tunnel if it doesn't exist and should, and destroy the
+      // tunnel if it exists and shouldn't. Calls itself repeatedly on a
+      // timeout.
+      function tunnelDaemon() {
+        if (tunnelDaemonTimeout == null) {
+          // Tunnel creation is already in progress
+          return
+        }
+        
+        // Otherwise, acquire the cheap-ass lock
+        clearTimeout(tunnelDaemonTimeout)
+        
+        console.log('Tunnel Daemon ticking')
+        
+        // First find the tunnel
+        findTunnel((err) => {
+          if (err) {
+            throw err
+          }
+          
+          // If there was no error, we know if we have a tunnel or not
+          
+          var want_connection = !!ractive.get('should_be_connected')
+          var have_connection = (ractive.get('iptunnel_index') != null)
+        
+          console.log('Connection: Have: ', have_connection, ', Want: ', want_connection)
+        
+          if (want_connection && !have_connection) {
+            // We want to be connected but aren't
+            createTunnel()
+          } else if (have_connection && !want_connection) {
+            // We don't want to be connected but we are
+            destroyTunnel()
+          }
+        })
+        // No matter what we do, assume it takes less than a second, and come back and do it again
+        tunnelDaemonTimeout = setTimeout(tunnelDaemon, 1000)
       }
 
       // We have a function to guess the config path. Calls the callback with
@@ -125,13 +266,31 @@
           el: '#container',
           template: data,
           data: {
-            pid: 0,
+            // Admin password for local cjdns
             cjdns_password: settings.get('cjdns_password'),
+            // Config file path for local cjdns
             cjdns_config_path: settings.get('cjdns_config_path'),
+            // Public key for local cjdns. It's available through the admin
+            // interface, but our module doesn't bind that function.
             cjdns_pubkey: settings.get('cjdns_pubkey'),
+            // Remote iptunnel pubkey
+            // TODO: have a nice way for the installer to specify this
+            remote_pubkey: settings.get('remote_pubkey'),
+            // What iptunnel number are we using? This gets periodically polled from cjdns.
+            iptunnel_index: null,
+            // User setting for whether to be on the VPN or not
             should_be_connected: settings.get('should_be_connected') || false,
             // Is cjdns reachable?
             cjdns_ok: false
+          },
+          computed: {
+            // Pubkey validation logic
+            cjdns_pubkey_valid: function() {
+              return !!parsePubkey(this.get('cjdns_pubkey'))
+            },
+            remote_pubkey_valid: function() {
+              return !!parsePubkey(this.get('remote_pubkey'))
+            }
           }
         })
         
@@ -145,6 +304,7 @@
         ractive.observe('cjdns_password', commit_setting, {init: false})      
         ractive.observe('cjdns_config_path', commit_setting, {init: false})
         ractive.observe('cjdns_pubkey', commit_setting, {init: false})
+        ractive.observe('remote_pubkey', commit_setting, {init: false})
         ractive.observe('should_be_connected', commit_setting, {init: false})
         
         // When we have the passord (or on startup), we can set up the cjdns admin object
@@ -159,6 +319,16 @@
             
             // Anything that wants cjdns will now see that the admin interface
             // is set.
+          }
+        })
+        
+        // When the remote server pubkey changes, kill the old tunnel if we had
+        // one and look for a new one that we might already have.
+        ractive.observe('remote_pubkey', (new_value, old_value) => {
+          if (old_value && parsePubkey(old_value)) {
+            // It's an actual change away from a real pubkey. Destroy the tunnel
+            // we had before we forget it's ours.
+            destroyTunnel()
           }
         })
         
@@ -193,7 +363,7 @@
 
             console.log(cjdns_config)
             
-            // Load pubkey (not accessible through API) and password
+            // Load pubkey (not accessible through API quite yet) and password
             ractive.set('cjdns_pubkey', cjdns_config['publicKey'])
             ractive.set('cjdns_password', (cjdns_config['admin'] || {})['password'])
             
@@ -205,6 +375,9 @@
         
         // Start the cjdns pinging process
         pingCjdns()
+        
+        // Start the tunnel daemon
+        tunnelDaemonTimeout = setTimeout(tunnelDaemon, 1000)
         
       })
     </script>
