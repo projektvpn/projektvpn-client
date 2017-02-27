@@ -1,20 +1,127 @@
-<h1>ProjektVPN</h1>
-<p>ProjektVPN Server Pubkey: <input value="{{remote_pubkey}}"></p>
-<p>Tunnel index: {{iptunnel_index}}</p>
-<p>Connection wanted: <input type='checkbox' checked='{{should_be_connected}}'></p>
-{{#if cjdns_reachable}}
-<p>CJDNS OK</p>
-{{else}}
-<strong>CJDNS not reachable!</strong>
+<div class="page-header">
+  <h1>ProjektVPN Client</h1>
+</div>
+
+<div class="row">
+  <div class="col-xs-12">
+    <ul class="nav nav-pills">
+      <li role="presentation" class="{{#if tab.basic}}active{{/if}}">
+        <a href="#" on-click="@this.fire('tab', 'tab', 'basic')">Basic</a>
+      </li>
+      <li role="presentation" class="{{#if tab.advanced}}active{{/if}}">
+        <a href="#" on-click="@this.fire('tab', 'tab', 'advanced')">Advanced</a>
+      </li>
+    </ul>
+    <br>
+  </div>
+</div>
+
+
+{{#if tab.basic}}
+  <div class="row">
+    <div class="col-xs-12">
+      {{#if !config_exists}}
+        <div class="panel panel-danger">
+          <div class="panel-heading">
+            <h3 class="panel-title">The cjdns config file is not found!</h3>
+          </div>
+          <div class="panel-body">
+            <a href="#" on-click="recheck-config" class="btn btn-primary">Try to Find</a>
+            <a href="https://github.com/cjdelisle/cjdns" class="btn btn-default">Install cjdns</a>
+          </div>
+        </div>
+      {{elseif !cjdns_password}}
+        <div class="panel panel-primary">
+          <div class="panel-heading">
+            <h3 class="panel-title">Initial Setup</h3>
+          </div>
+          <div class="panel-body">
+            <p>
+              Please click the button below to initialize the ProjektVPN client. You may need to enter your administrator password.
+            </p>
+            <a on-click="parse-config" href="#" class="btn btn-primary">Initialize</a>
+          </div>
+        </div>
+      {{elseif !remote_pubkey_valid}}
+        <div class="panel panel-primary">
+          <div class="panel-heading">
+            <h3 class="panel-title">Server Configuration</h3>
+          </div>
+          <div class="panel-body">
+            <p>Please select a ProjektVPN server to connect to.</p>
+            <a on-click="input-pubkey" href="#" class="btn btn-primary">Set Server Public Key</a>
+          </div>
+        </div>
+      {{else}}
+        <!-- We have all the configuration to make connectiong possible -->
+        {{#if iptunnel_index}}
+          <div class="panel panel-success">
+          <div class="panel-heading">
+            <h3 class="panel-title">Connected to VPN</h3>
+          </div>
+          <div class="panel-body">
+            <p>You are connected to the server. You should now be anonymous.</p>
+            <a on-click="connect" href="#" class="btn btn-danger">Disconnect</a>
+            <a href="https://duckduckgo.com/?q=what+is+my+ip&ia=answer" class="btn btn-info">Check IP</a>
+          </div>
+        {{else}}
+          <div class="panel panel-danger">
+          <div class="panel-heading">
+            <h3 class="panel-title">Not Connected to VPN</h3>
+          </div>
+          <div class="panel-body">
+            <p>You are not connected to the server. Your IP address is probably exposed.</p>
+            <a on-click="connect" href="#" class="btn btn-success">Connect</a>
+          </div>
+        {{/if}}
+      {{/if}}
+    </div>
+  </div>
 {{/if}}
-<p>CJDNS Config: <input value="{{cjdns_config_path}}"></p>
-{{#if cjdns_password}}
-  <p>CJDNS Credentials Stored</p>
-  <a on-click="parse-config" href="#">Re-Detect</a>
-{{else}}
-  <b>No CJDNS password available!</b>
-  <a on-click="parse-config" href="#">Autodetect</a>
+{{#if tab.advanced}}
+  <div class="row">
+    <div class="col-xs-12">
+      <div class="form-group">
+        <label>ProjektVPN Server Pubkey: </label>
+        <input type="text" class="form-control" value="{{remote_pubkey}}">
+      </div>
+      <p>Tunnel index: {{iptunnel_index}}</p>
+      <div class="checkbox">
+        <label><input type="checkbox" checked='{{should_be_connected}}'> Connection wanted</label>
+      </div>
+      {{#if cjdns_reachable}}
+      <p>cjdns OK</p>
+      {{else}}
+      <strong>cjdns not reachable!</strong>
+      {{/if}}
+      <div class="form-group">
+        <label>cjdns Config: </label>
+        <div class="input-group">
+          <input type="text" class="form-control" value="{{cjdns_config_path}}">
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button" on-click="recheck-config">Detect</button>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>cjdns Admin Password: </label>
+        <div class="input-group">
+          <input type="text" class="form-control" value="{{cjdns_password}}">
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button" on-click="parse-config">Detect</button>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>cjdns Pubkey: </label>
+        <div class="input-group">
+          <input type="text" class="form-control" value="{{cjdns_pubkey}}">
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button" on-click="parse-config">Detect</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
 {{/if}}
-<p>CJDNS Pubkey: <input value="{{cjdns_pubkey}}"></p>
-<p>CJDNS Admin Password: <input value="{{cjdns_password}}"></p>
 

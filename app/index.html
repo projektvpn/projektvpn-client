@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Have Bootstrap -->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    
+    <!-- Have custom styles -->
+    <link rel="stylesheet" href="css/projektvpn.client.css">
+    
     <title>ProjektVPN Client</title>
     <script type="text/javascript" src="js/ractive.min.js"></script>
     <script type="text/javascript">
@@ -18,6 +28,13 @@
       const JSON5 = require('json5')
       // Set up a settings manager
       const settings = require('user-settings').file('.projektvpn-client')
+      
+      // Links open in a real browser
+      nw.Window.get().on('new-win-policy', function(frame, url, policy) {
+        policy.ignore()
+        nw.Shell.openExternal(url)
+      })
+      
       
       // We will populate this with the cjdnsAdmin instance
       var admin = null
@@ -157,29 +174,27 @@
         // Otherwise, acquire the cheap-ass lock
         clearTimeout(tunnelDaemonTimeout)
         
-        console.log('Tunnel Daemon ticking')
-        
-        // First find the tunnel
-        findTunnel((err) => {
-          if (err) {
-            throw err
-          }
+        if (admin) {
+          // First find the tunnel
+          findTunnel((err) => {
+            if (err) {
+              throw err
+            }
+            
+            // If there was no error, we know if we have a tunnel or not
+            
+            var want_connection = !!ractive.get('should_be_connected')
+            var have_connection = (ractive.get('iptunnel_index') != null)
           
-          // If there was no error, we know if we have a tunnel or not
-          
-          var want_connection = !!ractive.get('should_be_connected')
-          var have_connection = (ractive.get('iptunnel_index') != null)
-        
-          console.log('Connection: Have: ', have_connection, ', Want: ', want_connection)
-        
-          if (want_connection && !have_connection) {
-            // We want to be connected but aren't
-            createTunnel()
-          } else if (have_connection && !want_connection) {
-            // We don't want to be connected but we are
-            destroyTunnel()
-          }
-        })
+            if (want_connection && !have_connection) {
+              // We want to be connected but aren't
+              createTunnel()
+            } else if (have_connection && !want_connection) {
+              // We don't want to be connected but we are
+              destroyTunnel()
+            }
+          })
+        }
         // No matter what we do, assume it takes less than a second, and come back and do it again
         tunnelDaemonTimeout = setTimeout(tunnelDaemon, 1000)
       }
@@ -220,6 +235,21 @@
           callback(null, null)
         })
         
+      }
+      
+      // Use the config path guesser. Assumes the ractive exists
+      function huntForConfig() {
+        // No config path is known, so default it
+        guessConfigPath((err, path) => {
+          if (err) {
+            throw err
+          }
+          
+          if (path != null) {
+            // Set the path
+            ractive.set('cjdns_config_path', path)
+          }
+        })
       }
       
       // Call the callback with an error, or null and the contents of the given
@@ -279,9 +309,14 @@
             // What iptunnel number are we using? This gets periodically polled from cjdns.
             iptunnel_index: null,
             // User setting for whether to be on the VPN or not
-            should_be_connected: settings.get('should_be_connected') || false,
+            should_be_connected: settings.get('should_be_connected') || true,
             // Is cjdns reachable?
-            cjdns_ok: false
+            cjdns_ok: false,
+            // What tab is the user on?
+            // We have one key, which is the tab name, with value true
+            tab: {
+              basic: true
+            }
           },
           computed: {
             // Pubkey validation logic
@@ -290,6 +325,11 @@
             },
             remote_pubkey_valid: function() {
               return !!parsePubkey(this.get('remote_pubkey'))
+            },
+            // Check if the cjdns config exists and is a file
+            config_exists: function() {
+              var config_path = this.get('cjdns_config_path')
+              return config_path && fs.existsSync(config_path) && !fs.lstatSync(config_path).isDirectory()
             }
           }
         })
@@ -333,20 +373,24 @@
         })
         
         if (!ractive.get('cjdns_config_path')) {
-          // No config path is known, so default it
-          guessConfigPath((err, path) => {
-            if (err) {
-              throw err
-            }
-            
-            if (path != null) {
-              // Set the path
-              ractive.set('cjdns_config_path', path)
-            }
-          })
+          huntForConfig()
         }
         
+        // Set window height for different tabs
+        ractive.observe('tab', (new_value) => {
+          if (new_value.basic) {
+            nw.Window.get().height = 450
+          } else if(new_value.advanced) {
+            nw.Window.get().height = 650
+          }
+        })
+        
+        
+        
         // Event handlers
+        
+        ractive.on('recheck-config', huntForConfig)
+        
         ractive.on('parse-config', (event) => {
           console.log('Go get the password')
           catProtectedFile(ractive.get('cjdns_config_path'), (err, data) => {
@@ -371,6 +415,33 @@
           })
         })
         
+        // Connect and disconnect handlers
+        ractive.on('connect', (event) => {
+          ractive.set('should_be_connected', true)
+        })
+        ractive.on('disconnect', (event) => {
+          ractive.set('should_be_connected', false)
+        })
+        
+        // Event to proimpt for and set the server public key
+        ractive.on('input-pubkey', (event) => {
+          var pubkey = prompt('Please enter the server public key, like "somethingsomethingsomething.k"')
+          if (pubkey && parsePubkey(pubkey)) {
+            ractive.set('remote_pubkey', pubkey)
+          } else {
+            alert('Invalid server public key. Please try again.')
+          }
+        })
+        
+        // Tab between UI tabs
+        ractive.on('tab', (event, tab) => {
+          // We use this weird one-hot tab object
+          tab_object = {}
+          tab_object[tab] = true
+          ractive.set('tab', tab_object)
+          console.log(ractive.get('tab'))
+        })
+        
         console.log('Setup complete!')
         
         // Start the cjdns pinging process
@@ -383,6 +454,9 @@
     </script>
   </head>
   <body>
-    <div id="container"></div>
+    <div class="container">
+      <div id="container"></div>
+    </div>
+    <!-- Bootstart's js is unhappy because jQuery seems to disagree with nw... -->
   </body>
 </html>
