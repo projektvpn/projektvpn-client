@@ -48,15 +48,55 @@
             <a on-click="input-pubkey" href="#" class="btn btn-primary">Set Server Public Key</a>
           </div>
         </div>
-      {{elseif iptunnel_index}}
+      {{elseif iptunnel_info.ip4Prefix == 0 && iptunnel_info.ip4Address && iptunnel_info.ip6Prefix == 0 && iptunnel_info.ip6Address}}
+        <div class="panel panel-success">
+          <div class="panel-heading">
+            <h3 class="panel-title">Connected to Dual-Protocol VPN</h3>
+          </div>
+          <div class="panel-body">
+            <p>All IPv4 and IPv6 Internet traffic is being routed through the VPN.</p>
+            <a on-click="disconnect" href="#" class="btn btn-danger">Disconnect</a>
+            <a href="http://ipv4.whatismyv6.com/" target="_blank" class="btn btn-info">Check IPv4</a>
+            <a href="http://ipv6.whatismyv6.com/" target="_blank" class="btn btn-info">Check IPv6</a>
+          </div>
+        </div>
+      {{elseif iptunnel_info.ip4Prefix == 0 && iptunnel_info.ip4Address}}
         <div class="panel panel-success">
           <div class="panel-heading">
             <h3 class="panel-title">Connected to VPN</h3>
           </div>
           <div class="panel-body">
-            <p>You are connected to the server. You should now be anonymous.</p>
+            <p>All IPv4 Internet traffic is being routed through the VPN.</p>
             <a on-click="disconnect" href="#" class="btn btn-danger">Disconnect</a>
             <a href="https://duckduckgo.com/?q=what+is+my+ip&ia=answer" target="_blank" class="btn btn-info">Check IP</a>
+          </div>
+        </div>
+      {{elseif iptunnel_info.ip4Prefix != 0 && iptunnel_info.ip4Address}}
+        <div class="panel panel-danger">
+          <div class="panel-heading">
+            <h3 class="panel-title">Connected to Local VPN Only</h3>
+          </div>
+          <div class="panel-body">
+            <p>Internet traffic is <strong>NOT</strong> being routed through the VPN. The server may be misconfigured.</p>
+            <a on-click="disconnect" href="#" class="btn btn-danger">Disconnect</a>
+            <a on-click="input-pubkey" href="#" class="btn btn-default">Change Server</a>
+            <a href="https://duckduckgo.com/?q=what+is+my+ip&ia=answer" target="_blank" class="btn btn-info">Check IP</a>
+          </div>
+        </div>
+      {{elseif iptunnel_index != null}}
+        <div class="panel panel-warning">
+          <div class="panel-heading">
+            <h3 class="panel-title">Connecting...</h3>
+          </div>
+          <div class="panel-body">
+            <p>
+            
+              A connection with the VPN server is being established. If a
+              connection is never established, the server may be unavailable.
+              
+            </p>
+            <a on-click="disconnect" href="#" class="btn btn-danger">Cancel</a>
+            <a on-click="input-pubkey" href="#" class="btn btn-default">Change Server</a>
           </div>
         </div>
       {{else}}
@@ -81,6 +121,10 @@
         <input type="text" class="form-control" value="{{remote_pubkey}}">
       </div>
       <p>Tunnel index: {{iptunnel_index}}</p>
+      <p>Assigned Local IPv4: {{iptunnel_info.ip4Address}}</p>
+      <p>IPv4 Prefix Length: {{iptunnel_info.ip4Prefix}}</p>
+      <p>Assigned Local IPv6: {{iptunnel_info.ip6Address}}</p>
+      <p>IPv6 Prefix Length: {{iptunnel_info.ip6Prefix}}</p>
       <div class="checkbox">
         <label><input type="checkbox" checked='{{should_be_connected}}'> Connection wanted</label>
       </div>

@@ -47,7 +47,8 @@
         var win = nw.Window.get()
         if (win.height != document.documentElement.scrollHeight) {
           win.setResizable(true)
-          win.height = document.documentElement.scrollHeight
+          // Don't get taller than the screen
+          win.height = Math.min(document.documentElement.scrollHeight, screen.height)
           win.setResizable(false)
         }
       }
@@ -111,6 +112,7 @@
               // Set it null now, but it may have come back and get found later.
               console.log('Tunnel went missing')
               ractive.set('iptunnel_index', null)
+              ractive.set('iptunnel_info', null)
             }
           }
           
@@ -128,8 +130,9 @@
                 // Outgoing connections get matched against the remote pubkey
                 if (response.data.key == ractive.get('remote_pubkey')) {
                   // This connection is with our remote node. So we found the right one!
-                  console.log('Found tunnel ', connection_number)
                   ractive.set('iptunnel_index', connection_number)
+                  // Save its tunnel data for display
+                  ractive.set('iptunnel_info', response.data)
                 }
               }
               // No error happened
@@ -159,6 +162,7 @@
             connection: ractive.get('iptunnel_index')
           })
           ractive.set('iptunnel_index', null)
+          ractive.set('iptunnel_info', null)
         }
       }
       
@@ -326,6 +330,9 @@
             remote_pubkey: settings.get('remote_pubkey'),
             // What iptunnel number are we using? This gets periodically polled from cjdns.
             iptunnel_index: null,
+            // What does that iptunnel look like (associated local IPs and so on)
+            // Holds the JSON we got from cjdns about it
+            iptunnel_info: null,
             // User setting for whether to be on the VPN or not
             should_be_connected: settings.get('should_be_connected') || true,
             // Is cjdns reachable?
