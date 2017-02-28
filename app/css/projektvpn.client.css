@@ -5,6 +5,12 @@ body {
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
+  -webkit-app-region: drag;
+}
+
+/* Actual main content is not draggable */
+.row {
+  -webkit-app-region: no-drag;
 }
 
 /* Make the page have a background over that */

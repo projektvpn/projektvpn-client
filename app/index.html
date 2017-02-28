@@ -378,10 +378,15 @@
         
         // Set window height for different tabs
         ractive.observe('tab', (new_value) => {
+          var win = nw.Window.get()
           if (new_value.basic) {
-            nw.Window.get().height = 450
+            win.setResizable(true)
+            win.height = 450
+            win.setResizable(false)
           } else if(new_value.advanced) {
+            win.setResizable(true)
             nw.Window.get().height = 650
+            win.setResizable(false)
           }
         })
         

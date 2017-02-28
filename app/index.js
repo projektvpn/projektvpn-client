@@ -19,13 +19,14 @@ var tray = null;
 nw.Window.open('index.html', {
     show: true,
     width: 600,
-    height: 600
+    frame: false
 }, function(new_win) {
   // Remember the window
   win = new_win
   win.on('close', function() {
     this.hide() // Close to tray
   })
+  win.setResizable(false)
 })
 
 // Create the UI if not created, and display it otherwise
