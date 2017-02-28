@@ -42,6 +42,24 @@
       // We use this global ractive
       var ractive = null
       
+      // We resize the window to its contents
+      function resizeToContent() {
+        var win = nw.Window.get()
+        if (win.height != document.documentElement.scrollHeight) {
+          win.setResizable(true)
+          win.height = document.documentElement.scrollHeight
+          win.setResizable(false)
+        }
+      }
+      // Resize when anything changes
+      var resizer = new MutationObserver(resizeToContent)
+      resizer.observe(document.documentElement, {
+        attributes: true,
+        childList: true,
+        characterData: true,
+        subtree: true
+      })
+      
       // Return the truthy ip6 if the given pubkey is valid, and false otherwise
       function parsePubkey(pubkey) {
         try {
@@ -376,22 +394,6 @@
           huntForConfig()
         }
         
-        // Set window height for different tabs
-        ractive.observe('tab', (new_value) => {
-          var win = nw.Window.get()
-          if (new_value.basic) {
-            win.setResizable(true)
-            win.height = 450
-            win.setResizable(false)
-          } else if(new_value.advanced) {
-            win.setResizable(true)
-            nw.Window.get().height = 650
-            win.setResizable(false)
-          }
-        })
-        
-        
-        
         // Event handlers
         
         ractive.on('recheck-config', huntForConfig)
@@ -459,6 +461,16 @@
     </script>
   </head>
   <body>
+    <nav class="navbar navbar-default titlebar">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" title="Close to Taskbar" onclick="nw.Window.get().hide()">
+            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+          </button>
+          <span class="navbar-brand" href="#">ProjektVPN Client</span>
+        </div>
+      </div>
+    </nav>
     <div class="container">
       <div id="container"></div>
     </div>

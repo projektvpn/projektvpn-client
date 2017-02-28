@@ -19,6 +19,7 @@ var tray = null;
 nw.Window.open('index.html', {
     show: true,
     width: 600,
+    height: 400,
     frame: false
 }, function(new_win) {
   // Remember the window
