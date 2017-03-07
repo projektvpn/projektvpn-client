@@ -1,5 +1,5 @@
 <div class="row">
-  <div class="col-xs-12">
+  <div class="col-xs-10">
     <ul class="nav nav-pills">
       <li role="presentation" class="{{#if tab.basic}}active{{/if}}">
         <a href="#" on-click="@this.fire('tab', 'tab', 'basic')">Basic</a>
@@ -10,6 +10,11 @@
     </ul>
     <br>
   </div>
+  {{#if remote_url && cjdns_pubkey}}
+    <div class="col-xs-2">
+      <a target="_blank" href="{{remote_url}}/account/{{cjdns_pubkey}}" class="btn btn-info pull-right">My Account</a>
+    </div>
+  {{/if}}
 </div>
 
 
@@ -47,7 +52,7 @@
             <p>Please select a ProjektVPN server to connect to.</p>
             <a on-click="input-pubkey" href="#" class="btn btn-primary">Set Server Public Key</a>
           </div>
-        </div>
+        </div>s.replace(/,+$/, "");
       {{elseif iptunnel_info.ip4Prefix == 0 && iptunnel_info.ip4Address && iptunnel_info.ip6Prefix == 0 && iptunnel_info.ip6Address}}
         <div class="panel panel-success">
           <div class="panel-heading">
@@ -92,10 +97,14 @@
             <p>
             
               A connection with the VPN server is being established. If a
-              connection is never established, the server may be unavailable.
+              connection is never established, your subscription may have
+              expired, or the server may be unavailable.
               
             </p>
             <a on-click="disconnect" href="#" class="btn btn-danger">Cancel</a>
+            {{#if remote_url}}
+              <a target="_blank" href="{{remote_url}}/account/{{cjdns_pubkey}}" class="btn btn-primary">Account Status</a>
+            {{/if}}
             <a on-click="input-pubkey" href="#" class="btn btn-default">Change Server</a>
           </div>
         </div>
@@ -120,6 +129,10 @@
         <label>ProjektVPN Server Pubkey: </label>
         <input type="text" class="form-control" value="{{remote_pubkey}}">
       </div>
+      <div class="form-group">
+        <label>ProjektVPN Server URL: </label>
+        <input type="text" class="form-control" value="{{remote_url}}" placeholder="http://example.com">
+      </div>
       <p>Tunnel index: {{iptunnel_index}}</p>
       <p>Assigned Local IPv4: {{iptunnel_info.ip4Address}}</p>
       <p>IPv4 Prefix Length: {{iptunnel_info.ip4Prefix}}</p>
@@ -127,6 +140,9 @@
       <p>IPv6 Prefix Length: {{iptunnel_info.ip6Prefix}}</p>
       <div class="checkbox">
         <label><input type="checkbox" checked='{{should_be_connected}}'> Connection wanted</label>
+      </div>
+      <div class="checkbox">
+        <label><input type="checkbox" checked='{{should_autolaunch}}'> Start at login</label>
       </div>
       {{#if cjdns_reachable}}
       <p>cjdns OK</p>
