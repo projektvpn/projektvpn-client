@@ -63,7 +63,7 @@
         if (win.height != document.documentElement.scrollHeight) {
           win.setResizable(true)
           // Don't get taller than the screen
-          win.height = Math.min(document.documentElement.scrollHeight, screen.height)
+          win.height = Math.min(document.documentElement.scrollHeight, screen.height * 0.90)
           win.setResizable(false)
         }
       }
@@ -235,6 +235,37 @@
         // No matter what we do, assume it takes less than a second, and come back and do it again
         tunnelDaemonTimeout = setTimeout(tunnelDaemon, 1000)
       }
+      
+      // Cheap lock to make sure we only have one chain of peerDaemon callbacks going.
+      var peerDaemonTimeout = null;
+      // Connect to the public peer if we can/should
+      function peerDaemon() {
+        if (peerDaemonTimeout == null) {
+          // Peer connection is already in progress
+          return
+        }
+        
+        // Otherwise, acquire the cheap-ass lock
+        clearTimeout(peerDaemonTimeout)
+        
+        if (admin) {
+          // Make the connection
+          admin.once(admin.udpInterface.beginConnection({
+            address: ractive.get('peer_endpoint'),
+            password: ractive.get('peer_password'),
+            publicKey: ractive.get('peer_pubkey') 
+          }), (response) => {
+            if(response.data.error != 'none') {
+              // cjdns didn't say it worked
+              throw new Error('Bad response: ' + JSON.stringify(response));
+            }
+            console.log('Tried to make peer connection', response)
+          })
+        }
+        
+        // No matter what we do, assume it takes less than a second, and come back and do it again
+        peerDaemonTimeout = setTimeout(peerDaemon, 1000)
+      }
 
       // We have a function to guess the config path. Calls the callback with
       // null and the appropriate path (or null), or an error
@@ -346,6 +377,12 @@
             // This is the ProjektVPN installation root URL for the server. Must
             // not have a trailing slash.
             remote_url: settings.get('remote_url'),
+            // This is the public cjdns peering IP:port to use.
+            peer_endpoint: settings.get('peer_endpoint'),
+            // This is the public cjdns peering pubkey to use.
+            peer_pubkey: settings.get('peer_pubkey'),
+            // This is the public cjdns peering password to use.
+            peer_password: settings.get('peer_password'),
             // What iptunnel number are we using? This gets periodically polled from cjdns.
             iptunnel_index: null,
             // What does that iptunnel look like (associated local IPs and so on)
@@ -392,6 +429,9 @@
         ractive.observe('cjdns_pubkey', commit_setting, {init: false})
         ractive.observe('remote_pubkey', commit_setting, {init: false})
         ractive.observe('remote_url', commit_setting, {init: false})
+        ractive.observe('peer_endpoint', commit_setting, {init: false})
+        ractive.observe('peer_pubkey', commit_setting, {init: false})
+        ractive.observe('peer_password', commit_setting, {init: false})
         ractive.observe('should_be_connected', commit_setting, {init: false})
         ractive.observe('should_autolaunch', commit_setting, {init: false})
         
@@ -498,6 +538,9 @@
         
         // Start the tunnel daemon
         tunnelDaemonTimeout = setTimeout(tunnelDaemon, 1000)
+        
+        // Start the peer daemon
+        peerDaemonTimeout = setTimeout(peerDaemon, 1000)
         
       })
     </script>

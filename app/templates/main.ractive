@@ -124,31 +124,39 @@
 {{/if}}
 {{#if tab.advanced}}
   <div class="row">
-    <div class="col-xs-12">
-      <div class="form-group">
-        <label>ProjektVPN Server Pubkey: </label>
-        <input type="text" class="form-control" value="{{remote_pubkey}}">
-      </div>
-      <div class="form-group">
-        <label>ProjektVPN Server URL: </label>
-        <input type="text" class="form-control" value="{{remote_url}}" placeholder="http://example.com">
-      </div>
-      <p>Tunnel index: {{iptunnel_index}}</p>
-      <p>Assigned Local IPv4: {{iptunnel_info.ip4Address}}</p>
-      <p>IPv4 Prefix Length: {{iptunnel_info.ip4Prefix}}</p>
-      <p>Assigned Local IPv6: {{iptunnel_info.ip6Address}}</p>
-      <p>IPv6 Prefix Length: {{iptunnel_info.ip6Prefix}}</p>
+    <div class="col-xs-6">
+      <h3>ProjektVPN
+        {{#if iptunnel_index != null && iptunnel_index != undefined }}
+          <span class="label label-success">Tunnel {{iptunnel_index}}</span>
+        {{else}}
+          <span class="label label-danger">Disconnected</span>
+        {{/if}}
+      </h3>
       <div class="checkbox">
         <label><input type="checkbox" checked='{{should_be_connected}}'> Connection wanted</label>
       </div>
       <div class="checkbox">
         <label><input type="checkbox" checked='{{should_autolaunch}}'> Start at login</label>
       </div>
-      {{#if cjdns_reachable}}
-      <p>cjdns OK</p>
-      {{else}}
-      <strong>cjdns not reachable!</strong>
-      {{/if}}
+      <p>Internal IPv4: {{iptunnel_info.ip4Address}}/{{iptunnel_info.ip4Prefix}}</p>
+      <p>Internal IPv6: {{iptunnel_info.ip6Address}}/{{iptunnel_info.ip6Prefix}}</p>
+      <div class="form-group">
+        <label>ProjektVPN Server Pubkey: </label>
+        <input type="text" class="form-control" value="{{remote_pubkey}}" placeholder="tgguwncunh4x3pfhu6gd23mxtjym74njdb4w0hl65zgmxxx06bh0.k">
+      </div>
+      <div class="form-group">
+        <label>ProjektVPN Server URL: </label>
+        <input type="text" class="form-control" value="{{remote_url}}" placeholder="http://example.com">
+      </div>
+    </div>
+    <div class="col-xs-6">
+      <h3>cjdns
+        {{#if cjdns_reachable}}
+          <span class="label label-success">OK</span>
+        {{else}}
+          <span class="label label-danger">Not Reachable</span>
+        {{/if}}
+      </h3>
       <div class="form-group">
         <label>cjdns Config: </label>
         <div class="input-group">
@@ -161,7 +169,7 @@
       <div class="form-group">
         <label>cjdns Admin Password: </label>
         <div class="input-group">
-          <input type="text" class="form-control" value="{{cjdns_password}}">
+          <input type="text" class="form-control" value="{{cjdns_password}}" placeholder="tgguwncunh4x3pfhu6gd23mxtjym74njdb4w0hl65zgmxxx06bh0.k">
           <span class="input-group-btn">
             <button class="btn btn-default" type="button" on-click="parse-config">Detect</button>
           </span>
@@ -175,6 +183,18 @@
             <button class="btn btn-default" type="button" on-click="parse-config">Detect</button>
           </span>
         </div>
+      </div>
+      <div class="form-group">
+        <label>Peer Endpoint: </label>
+        <input type="text" class="form-control" value="{{peer_endpoint}}" placeholder="234.64.3.11:12345">
+      </div>
+      <div class="form-group">
+        <label>Peer Pubkey: </label>
+        <input type="text" class="form-control" value="{{peer_pubkey}}" placeholder="tgguwncunh4x3pfhu6gd23mxtjym74njdb4w0hl65zgmxxx06bh0.k">
+      </div>
+      <div class="form-group">
+        <label>Peer Password: </label>
+        <input type="text" class="form-control" value="{{peer_password}}">
       </div>
     </div>
   </div>
