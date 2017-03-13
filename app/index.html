@@ -264,7 +264,7 @@
         }
         
         // No matter what we do, assume it takes less than a second, and come back and do it again
-        peerDaemonTimeout = setTimeout(peerDaemon, 1000)
+        peerDaemonTimeout = setTimeout(peerDaemon, 1000000)
       }
 
       // We have a function to guess the config path. Calls the callback with
@@ -444,6 +444,32 @@
                 port: 11234,
                 password: new_value
             })
+            
+            // Now we have to patch the admin interface to mark the UDP
+            // interface connecting command as restricted.
+            admin.udpInterface.beginConnection = admin.request.auto({
+                restricted: true,
+                func: 'UDPInterface_beginConnection',
+                args: {
+                    address: {
+                        required: true,
+                        type: 'string'
+                    },
+                    interfaceNumber: {
+                        required: false,
+                        type: 'int'
+                    },
+                    password: {
+                        required: false,
+                        type: 'string'
+                    },
+                    publicKey: {
+                        required: true,
+                        type: 'string'
+                    }
+                }
+            })
+            
             
             // Anything that wants cjdns will now see that the admin interface
             // is set.
