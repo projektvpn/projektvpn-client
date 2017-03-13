@@ -248,7 +248,7 @@
         // Otherwise, acquire the cheap-ass lock
         clearTimeout(peerDaemonTimeout)
         
-        if (admin) {
+        if (admin && ractive.get('peer_endpoint') && ractive.get('peer_password') && ractive.get('peer_pubkey')) {
           // Make the connection
           admin.once(admin.udpInterface.beginConnection({
             address: ractive.get('peer_endpoint'),
@@ -263,8 +263,8 @@
           })
         }
         
-        // No matter what we do, assume it takes less than a second, and come back and do it again
-        peerDaemonTimeout = setTimeout(peerDaemon, 1000000)
+        // Only poke it again every few minutes, because it seems to reset the tunnel state every time.
+        peerDaemonTimeout = setTimeout(peerDaemon, 1000 * 60 * 5)
       }
 
       // We have a function to guess the config path. Calls the callback with
