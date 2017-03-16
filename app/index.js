@@ -20,7 +20,8 @@ nw.Window.open('index.html', {
     show: true,
     width: 600,
     height: 400,
-    frame: false
+    frame: false,
+    icon: 'img/windowicon.png'
 }, function(new_win) {
   // Remember the window
   win = new_win

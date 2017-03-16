@@ -5,7 +5,8 @@ var nw = new NwBuilder({
     platforms: ['osx64', 'win64', 'linux64'],
     version: '0.20.3',
     flavor: 'normal',
-    cacheDir: 'node_modules/nw-builder/cache/'
+    cacheDir: 'node_modules/nw-builder/cache/',
+    winIco : 'app/img/winicon.ico',
 });
 
 //Log stuff you want
