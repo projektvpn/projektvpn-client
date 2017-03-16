@@ -52,7 +52,7 @@
             <p>Please select a ProjektVPN server to connect to.</p>
             <a on-click="input-pubkey" href="#" class="btn btn-primary">Set Server Public Key</a>
           </div>
-        </div>s.replace(/,+$/, "");
+        </div>
       {{elseif iptunnel_info.ip4Prefix == 0 && iptunnel_info.ip4Address && iptunnel_info.ip6Prefix == 0 && iptunnel_info.ip6Address}}
         <div class="panel panel-success">
           <div class="panel-heading">
@@ -97,8 +97,8 @@
             <p>
             
               A connection with the VPN server is being established. If a
-              connection is never established, your subscription may have
-              expired, or the server may be unavailable.
+              connection is never established, you may need to purchase VPN
+              time, or the server may be unavailable.
               
             </p>
             <a on-click="disconnect" href="#" class="btn btn-danger">Cancel</a>

@@ -31,12 +31,27 @@
       // Set up a settings manager
       const settings = require('user-settings').file('.projektvpn-client')
       
-      // Set up default settings (for bools we can't just || with things)
-      if (settings.get('should_be_connected') == undefined) {
-        settings.set('should_be_connected', true)
+      // We have some hardcoded default settings, so no need for the installer
+      // to drop anything special.
+      // This will need to be changed to make installers for a new deployment.
+      // Since the server is http, these keys are the root of trust.
+      const DEFAULT_SETTINGS = {
+        should_be_connected: true,
+        should_autolaunch: true,
+        remote_pubkey: 'f64hfl7c4uxt6krmhPutTheRealAddressOfANodeHere7kfm5m0.k',
+        remote_url: 'http://projektvpn.com',
+        // By default peer directly with the VPN server
+        // For more anonymity you can not do that
+        peer_endpoint: '99.99.99.99:11444',
+        peer_pubkey: 'dt933shnlgpvw3g2hnrlhn7wbw9jjtv7vgjxl0k5z811wz6uz530.k',
+        peer_password: 'k83j55w6u72uuj33k5h1j1b866ycpdb'
       }
-      if (settings.get('should_autolaunch') == undefined) {
-        settings.set('should_autolaunch', true)
+      
+      for(setting_name in DEFAULT_SETTINGS) {
+        if(settings.get(setting_name) == undefined) {
+          // Default this setting
+          settings.set(setting_name, DEFAULT_SETTINGS[setting_name])
+        }
       }
       
       // Links open in a real browser
@@ -75,6 +90,13 @@
         characterData: true,
         subtree: true
       })
+      
+      // Also resize on a timer in case we get stuck...
+      function resizePeriodically() {
+        resizeToContent();
+        setTimeout(resizePeriodically, 1000);
+      }
+      resizePeriodically();
       
       // Return the truthy ip6 if the given pubkey is valid, and false otherwise
       function parsePubkey(pubkey) {
