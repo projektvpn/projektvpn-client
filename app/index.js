@@ -21,7 +21,7 @@ nw.Window.open('index.html', {
     width: 600,
     height: 400,
     frame: false,
-    icon: 'img/windowicon.png'
+    icon: 'img/icon.png'
 }, function(new_win) {
   // Remember the window
   win = new_win
@@ -48,7 +48,7 @@ function quit() {
   process.exit()
 }
 
-tray = new nw.Tray({ icon: 'img/trayicon.png', iconsAreTemplates: false })
+tray = new nw.Tray({ icon: 'img/icon.png', iconsAreTemplates: false })
 tray.tooltip = 'ProjektVPN'
 // Show the UI when the icon is left-clicked
 tray.on('click', function() {
