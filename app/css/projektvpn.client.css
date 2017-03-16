@@ -3,12 +3,14 @@ body {
   background-color: #fff;
   -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
   box-shadow: 0 1px 1px rgba(0,0,0,.05);
-  border: 1px solid #e7e7e7;
+  border: 3px solid #e7e7e7;
 }
 
+/* No border on the titlebar navbar */
 .titlebar {
   -webkit-user-select: none;
   -webkit-app-region: drag;
+  border: none !important;
 }
 
 button {

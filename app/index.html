@@ -38,7 +38,7 @@
       const DEFAULT_SETTINGS = {
         should_be_connected: true,
         should_autolaunch: true,
-        remote_pubkey: 'f64hfl7c4uxt6krmhPutTheRealAddressOfANodeHere7kfm5m0.k',
+        remote_pubkey: 'dt933shnlgpvw3g2hnrlhn7wbw9jjtv7vgjxl0k5z811wz6uz530.k',
         remote_url: 'http://projektvpn.com',
         // By default peer directly with the VPN server
         // For more anonymity you can not do that
@@ -94,7 +94,7 @@
       // Also resize on a timer in case we get stuck...
       function resizePeriodically() {
         resizeToContent();
-        setTimeout(resizePeriodically, 1000);
+        setTimeout(resizePeriodically, 100);
       }
       resizePeriodically();
       
@@ -576,7 +576,6 @@
           tab_object = {}
           tab_object[tab] = true
           ractive.set('tab', tab_object)
-          console.log(ractive.get('tab'))
         })
         
         console.log('Setup complete!')
