@@ -27,9 +27,15 @@
       // We need this for parsing cjdns configs
       const JSON5 = require('json5')
       // We need this for starting on startup
-      const AutoLaunch = require('auto-launch');
+      const AutoLaunch = require('auto-launch')
       // Set up a settings manager
       const settings = require('user-settings').file('.projektvpn-client')
+      // Set up a proper Github API client to see if we are up to date
+      const GithubApi = require("github");
+      
+      // Load our app's version
+      const VERSION = JSON.parse(fs.readFileSync('package.json', 'utf8')).version
+      console.log('ProjektVPN Client ' + VERSION + ' starting...')
       
       // We have some hardcoded default settings, so no need for the installer
       // to drop anything special.
@@ -44,7 +50,11 @@
         // For more anonymity you can not do that
         peer_endpoint: '99.99.99.99:11444',
         peer_pubkey: 'dt933shnlgpvw3g2hnrlhn7wbw9jjtv7vgjxl0k5z811wz6uz530.k',
-        peer_password: 'k83j55w6u72uuj33k5h1j1b866ycpdb'
+        peer_password: 'k83j55w6u72uuj33k5h1j1b866ycpdb',
+        // We also use these to point tot the official Github, so we can find
+        // new releases.
+        github_owner: 'projektvpn',
+        github_repo: 'projektvpn-client'
       }
       
       for(setting_name in DEFAULT_SETTINGS) {
@@ -52,6 +62,45 @@
           // Default this setting
           settings.set(setting_name, DEFAULT_SETTINGS[setting_name])
         }
+      }
+      
+      // Configure a Github client that we can use to check for updates. 
+      var github = new GithubApi({
+        debug: false,
+        protocol: "https",
+        host: "api.github.com",
+        headers: {
+            "user-agent": "ProjektVPN Client " + VERSION
+        },
+        timeout: 5000
+      })
+      
+      // Have a function to get the version tag of the latest version from
+      // Github.
+      function getLatestVersion(callback) {
+        github.repos.getLatestRelease({
+          owner: settings.get('github_owner'),
+          repo: settings.get('github_repo')
+        }, (err, res) => {
+          if (err) {
+            return callback(err)
+          }
+          
+          console.log('Latest Release: ', res)
+          
+          // We got the whole version struct, which has a name and a tag name.
+          // The tag name will be v + the semantic version, which we can ensure
+          // because we control it.
+          tag_name = res.tag_name
+          
+          if(typeof tag_name != 'string' || tag_name.length < 1 || tag_name[0] != 'v') {
+            // Not a legit tag
+            return callback(new Error('Invalid tag format: ' + tag_name))
+          }
+          
+          // Report tag name minus the 'v', which will be the version.
+          callback(null, tag_name.substr(1))
+        })
       }
       
       // Links open in a real browser
@@ -75,10 +124,13 @@
       // We resize the window to its contents
       function resizeToContent() {
         var win = nw.Window.get()
-        if (win.height != document.documentElement.scrollHeight) {
+        if (win.height != document.documentElement.scrollHeight || win.height < 200) {
+          // We are the wrong size or too small.
           win.setResizable(true)
           // Don't get taller than the screen
-          win.height = Math.max(100, Math.min(document.documentElement.scrollHeight, screen.height * 0.90))
+          var desiredHeight = Math.max(200, Math.min(document.documentElement.scrollHeight, screen.height * 0.90))
+          console.log('Resize to: ', desiredHeight)
+          win.height = desiredHeight
           win.setResizable(false)
         }
       }
@@ -93,10 +145,14 @@
       
       // Also resize on a timer in case we get stuck...
       function resizePeriodically() {
-        resizeToContent();
-        setTimeout(resizePeriodically, 100);
+        try {
+          resizeToContent()
+        } catch (e) {
+          console.log('Resizing error: ', e)
+        }
+        setTimeout(resizePeriodically, 100)
       }
-      resizePeriodically();
+      resizePeriodically()
       
       // Return the truthy ip6 if the given pubkey is valid, and false otherwise
       function parsePubkey(pubkey) {
@@ -295,7 +351,7 @@
         
         // We know where fils ought to be by default
         var possible_paths = ['/etc/cjdroute.conf', 'C:\\Program Files (x86)\\cjdns\\cjdroute.conf']
-        
+        9
         async.map(possible_paths, (item, callback) => {
           // See if each file exists
           fs.access(item, fs.constants.F_OK, (err) => {
@@ -386,6 +442,14 @@
           el: '#container',
           template: data,
           data: {
+            // Current version of the client
+            current_version: VERSION,
+            // Latest version, fetched from the web, when we get it.
+            latest_version: null,
+            // Copy over the Github settings from the config, but don't two-way-
+            // bind them to the settings file.
+            github_owner: settings.get('github_owner'),
+            github_repo: settings.get('github_repo'),
             // Admin password for local cjdns
             cjdns_password: settings.get('cjdns_password'),
             // Config file path for local cjdns
@@ -588,6 +652,22 @@
         
         // Start the peer daemon
         peerDaemonTimeout = setTimeout(peerDaemon, 1000)
+        
+        // Check for updates, which uses the ractive
+        function checkVersion() {
+          getLatestVersion((err, version) => {
+            if (err) {
+              console.log('Error polling version: ', err)
+            } else {
+              // Tell the ractive
+              ractive.set('latest_version', version)
+            }
+          })
+        }
+        // Do it when the user says
+        ractive.on('check-version', checkVersion)
+        // And do it now
+        checkVersion()
         
       })
     </script>

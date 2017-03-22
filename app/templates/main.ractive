@@ -1,5 +1,5 @@
 <div class="row">
-  <div class="col-xs-10">
+  <div class="col-xs-6">
     <ul class="nav nav-pills">
       <li role="presentation" class="{{#if tab.basic}}active{{/if}}">
         <a href="#" on-click="@this.fire('tab', 'tab', 'basic')">Basic</a>
@@ -10,11 +10,17 @@
     </ul>
     <br>
   </div>
-  {{#if remote_url && cjdns_pubkey}}
-    <div class="col-xs-2">
-      <a target="_blank" href="{{remote_url}}/account/{{cjdns_pubkey}}" class="btn btn-info pull-right">My Account</a>
+  
+  <div class="col-xs-6">
+    <div class="text-right">
+      {{#if latest_version && latest_version != current_version}}
+        <a target="_blank" href="https://github.com/{{github_owner}}/{{github_repo}}/releases/latest" class="btn btn-warning" title="Version {{latest_version}} is available! You have {{current_version}}.">Update Client!</a>
+      {{/if}}
+      {{#if remote_url && cjdns_pubkey}}
+        <a target="_blank" href="{{remote_url}}/account/{{cjdns_pubkey}}" class="btn btn-info" title="View your account on the ProjektVPN website">My Account</a>
+      {{/if}}
     </div>
-  {{/if}}
+  </div>
 </div>
 
 
@@ -101,6 +107,11 @@
               time, or the server may be unavailable.
               
             </p>
+            {{#if latest_version && latest_version != current_version}}
+            <p>
+              You are using an outdated version of the ProjektVPN software (version {{current_version}}). Connectivity problems may be solved by <a target="_blank" href="https://github.com/{{github_owner}}/{{github_repo}}/releases/latest">updating to version {{latest_version}}</a>.
+            </p>
+            {{/if}}
             <a on-click="disconnect" href="#" class="btn btn-danger">Cancel</a>
             {{#if remote_url}}
               <a target="_blank" href="{{remote_url}}/account/{{cjdns_pubkey}}" class="btn btn-primary">Account Status</a>
@@ -127,7 +138,7 @@
     <div class="col-xs-6">
       <h3>ProjektVPN
         {{#if iptunnel_index != null && iptunnel_index != undefined }}
-          <span class="label label-success">Tunnel {{iptunnel_index}}</span>
+          <span class="label label-default">Tunnel {{iptunnel_index}}</span>
         {{else}}
           <span class="label label-danger">Disconnected</span>
         {{/if}}
@@ -147,6 +158,22 @@
       <div class="form-group">
         <label>ProjektVPN Server URL: </label>
         <input type="text" class="form-control" value="{{remote_url}}" placeholder="http://example.com">
+      </div>
+      
+      <div class="form-group">
+        <label>Your Version: </label>
+        <input type="text" class="form-control" value="{{current_version}}" disabled>
+      </div>
+      <div class="form-group">
+        <label>Latest Version: </label>
+        <div class="input-group">
+          <input type="text" class="form-control" value="{{latest_version}}" disabled>
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button" title="Check for updates" on-click="check-version">
+              <span class="glyphicon glyphicon-refresh"></span>
+            </button>
+          </span>
+        </div>
       </div>
     </div>
     <div class="col-xs-6">

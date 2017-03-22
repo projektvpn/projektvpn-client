@@ -1,11 +1,15 @@
 {
   "name": "projektvpn-client",
   "version": "0.0.1",
+  "description": "Client for ProjektVPN VPN software",
+  "license": "AGPL-3.0",
+  "repository": "github:projektvpn/projektvpn-client",
   "dependencies": {
     "async": "^2.1.5",
     "auto-launch": "^5.0.1",
     "cjdns-admin": "^0.2.0",
     "crypto": "0.0.3",
+    "github": "^9.2.0",
     "json5": "^0.5.1",
     "json5stream": "^1.0.3",
     "sudo-prompt": "^6.2.1",

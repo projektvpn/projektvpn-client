@@ -1,11 +1,15 @@
 {
   "name": "projektvpn-client-builder",
   "version": "0.0.1",
+  "description": "Builder for client for ProjektVPN VPN software",
+  "license": "AGPL-3.0",
+  "repository": "github:projektvpn/projektvpn-client",
   "scripts": {
     "start": "./node_modules/nw-builder/bin/nwbuild -v 0.20.3 -r app",
     "package": "node build.js"
   },
   "dependencies": {
+    "github": "^9.2.0",
     "nw-builder": "^3.2.0"
   }
 }
