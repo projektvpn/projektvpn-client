@@ -40,18 +40,18 @@
       // We have some hardcoded default settings, so no need for the installer
       // to drop anything special.
       // This will need to be changed to make installers for a new deployment.
-      // Since the server is http, these keys are the root of trust.
+      // Since the server is http for now, these keys are the root of trust.
       const DEFAULT_SETTINGS = {
         should_be_connected: true,
         should_autolaunch: true,
-        remote_pubkey: 'dt933shnlgpvw3g2hnrlhn7wbw9jjtv7vgjxl0k5z811wz6uz530.k',
+        remote_pubkey: 'c9b98p6gw43ygcrhruuq42sl5d7wu58wt1x5f6p39twc8ldmvzw0.k',
         remote_url: 'http://projektvpn.com',
         // By default peer directly with the VPN server
         // For more anonymity you can not do that
-        peer_endpoint: '99.99.99.99:11444',
-        peer_pubkey: 'dt933shnlgpvw3g2hnrlhn7wbw9jjtv7vgjxl0k5z811wz6uz530.k',
-        peer_password: 'k83j55w6u72uuj33k5h1j1b866ycpdb',
-        // We also use these to point tot the official Github, so we can find
+        peer_endpoint: '198.167.222.70:51956',
+        peer_pubkey: 'c9b98p6gw43ygcrhruuq42sl5d7wu58wt1x5f6p39twc8ldmvzw0.k',
+        peer_password: 'JLMmTakhadPFt4t3Kc7cvGQN',
+        // We also use these to point to the official Github, so we can find
         // new releases.
         github_owner: 'projektvpn',
         github_repo: 'projektvpn-client'
@@ -668,6 +668,14 @@
         ractive.on('check-version', checkVersion)
         // And do it now
         checkVersion()
+        
+        if (!ractive.get('cjdns_password') || !ractive.get('should_autolaunch')) {
+          // Hack to show when we need to do our setup or when we think maybe
+          // the user launched us from a shortcut. Otherwise we launch to
+          // taskbar.
+          // TODO: check argv for a flag to always show
+          nw.Window.get().show()
+        }
         
       })
     </script>

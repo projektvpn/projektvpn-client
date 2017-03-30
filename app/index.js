@@ -17,7 +17,7 @@ var tray = null;
 // The window code can do all our actual VPN client work.
 // TODO: set show false to start up in the background
 nw.Window.open('index.html', {
-    show: true,
+    show: false,
     width: 600,
     height: 400,
     frame: false,
