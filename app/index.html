@@ -339,10 +339,16 @@
             }
             console.log('Tried to make peer connection', response)
           })
+          
+          // Only poke it again every few minutes, because it seems to reset the tunnel state every time.
+          peerDaemonTimeout = setTimeout(peerDaemon, 1000 * 60 * 5)
+          
+        } else {
+          // Check again soon
+          peerDaemonTimeout = setTimeout(peerDaemon, 1000)
         }
         
-        // Only poke it again every few minutes, because it seems to reset the tunnel state every time.
-        peerDaemonTimeout = setTimeout(peerDaemon, 1000 * 60 * 5)
+        
       }
 
       // We have a function to guess the config path. Calls the callback with
@@ -694,6 +700,6 @@
     <div class="container">
       <div id="container"></div>
     </div>
-    <!-- Bootstart's js is unhappy because jQuery seems to disagree with nw... -->
+    <!-- Bootstrap's js is unhappy because jQuery seems to disagree with nw... -->
   </body>
 </html>
